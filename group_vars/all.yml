@@ -1,0 +1,78 @@
+---
+
+#include: secret.yml
+
+### General Variables - Enter/or Change these details ###
+key_name: ansibleuser
+pub_key_path: /vagrant/id_rsa.pub
+instance_type: t2.nano
+ami_id: ami-0ee0b284267ea6cde #(ubuntu) 
+name: mypysqlapp
+region: ap-southeast-1
+
+public_eip: 13.250.218.49
+domain: cryptohuat.com
+certbot_admin_email: https@1xy3z.com
+
+### a map defining the subnets we will build in the VPC ###
+cidr_block: 10.2.0.0/16
+
+vpc_subnets:
+  public-a:
+    cidr: 10.2.1.0/24
+    az: "{{ region }}a"
+    map_public: yes
+  private-a:
+    cidr: 10.2.2.0/24
+    az: "{{ region }}a"
+  public-b:
+    cidr: 10.2.3.0/24
+    az: "{{ region }}b"
+  private-b:
+    cidr: 10.2.4.0/24
+    az: "{{ region }}b"
+  public-c:
+    cidr: 10.2.5.0/24
+    az: "{{ region }}c"
+  private-c:
+    cidr: 10.2.6.0/24
+    az: "{{ region }}c"
+
+### list defining the security groups for our VPC ###
+vpc_security_groups:
+    public-web:
+      name: allow-public-web
+      description: "Allow public web"
+      rules:
+        - proto: tcp
+          cidr_ip: 0.0.0.0/0
+          ports:
+            - 80
+            - 443
+          
+    my-ip:
+      name: allow-all
+      description: "Allow all traffic from my ip"
+      rules:
+        - proto: all
+          cidr_ip: 182.55.149.105/32
+
+    private-access:
+      name: allow-ports-within-vpc
+      description: "allow traffic from vpcs public subnets"   
+      rules:
+        - proto: all
+          cidr_ip: 10.2.0.0/16 
+
+### For SSL Certificates ###
+certbot_create_if_missing: true
+certbot_create_standalone_stop_services: [nginx]
+certbot_create_method: standalone
+
+### For Database ###
+# db_name: awesome_db
+# db_user: awesome_user
+# db_user_password: awesome_password
+
+
+

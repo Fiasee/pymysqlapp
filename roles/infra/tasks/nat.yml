@@ -1,0 +1,35 @@
+- name: create route table for public subnets
+  local_action: ec2_vpc_route_table
+  args:
+    vpc_id: "{{ myvpc.vpc.id }}"
+    tags:
+      Name: "myvpc-public"
+    subnets:
+      - "{{ vpc_subnet_ids['public-a'] }}"
+      - "{{ vpc_subnet_ids['public-b'] }}"
+      - "{{ vpc_subnet_ids['public-c'] }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+
+- name: create NAT gateway
+  ec2_vpc_nat_gateway:
+    subnet_id: "{{ vpc_subnet_ids['public-a'] }}"
+    region: "{{ region }}"
+    wait: yes
+    if_exist_do_not_create: true
+  register: ngw
+
+- name: create route table for private subnets
+  local_action: ec2_vpc_route_table
+  args:
+    vpc_id: "{{ myvpc.vpc.id }}"
+    tags:
+      Name: "myvpc-private"
+    subnets:
+      - "{{ vpc_subnet_ids['private-a'] }}"
+      - "{{ vpc_subnet_ids['private-b'] }}"
+      - "{{ vpc_subnet_ids['private-c'] }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ ngw.nat_gateway_id }}"  

@@ -1,0 +1,89 @@
+---
+    - name: create public server launch config
+      local_action: ec2_lc
+      args:
+        name: public_server_lc
+        image_id: "{{ ami_id }}"
+        key_name: "{{ key_name }}"
+        region: "{{ region }}"
+        user_data: "{{ lookup('file', 'user_data.sh') }}"
+        security_groups: 
+          - "{{ sg_ids['public-web'] }}"
+          - "{{ sg_ids['my-ip'] }}"
+          - "{{ sg_ids['private-access'] }}"
+        instance_type: "{{ instance_type }}"
+
+    - name: create private server launch config
+      local_action: ec2_lc
+      args:
+        name: private_server_lc
+        image_id: "{{ ami_id }}"
+        key_name: "{{ key_name }}"
+        region: "{{ region }}"
+        user_data: "{{ lookup('file', 'user_data.sh') }}"
+        security_groups: 
+          - "{{ sg_ids['my-ip'] }}"
+          - "{{ sg_ids['private-access'] }}"
+        instance_type: "{{ instance_type }}"
+        assign_public_ip: no    
+
+    - local_action: ec2_asg
+      args:
+        name: webserver_asg
+        launch_config_name: public_server_lc
+        health_check_period: 60
+        health_check_type: ELB
+        min_size: 1
+        max_size: 1
+        desired_capacity: 1
+        region: "{{ region }}"
+        availability_zones: 
+        vpc_zone_identifier: 
+          - "{{ vpc_subnet_ids['public-a'] }}"
+          - "{{ vpc_subnet_ids['public-b'] }}"
+          - "{{ vpc_subnet_ids['public-c'] }}"
+        tags:
+          - env: prod
+          - type: webserver
+          - Name: front
+      register: web_asg_result
+
+    - name: associate my elastic IP with the webserver
+      ec2_eip:
+        device_id: "{{ item }}"
+        ip: "{{ public_eip }}"
+        region: "{{ region }}"
+      with_items: "{{ web_asg_result.instances[0] }}"
+
+    - local_action: ec2_asg
+      args:
+        name: appserver_asg
+        launch_config_name: private_server_lc
+        health_check_period: 60
+        health_check_type: ELB
+        min_size: 1
+        max_size: 1
+        desired_capacity: 1
+        region: "{{ region }}"
+        availability_zones: 
+        vpc_zone_identifier: 
+          - "{{ vpc_subnet_ids['private-a'] }}"
+          - "{{ vpc_subnet_ids['private-b'] }}"
+          - "{{ vpc_subnet_ids['private-c'] }}"
+        tags:
+          - env: prod
+          - type: appserver
+          - Name: application
+      register: app_asg_result  
+
+    - pause:
+        seconds: 30  
+
+ 
+
+
+
+
+   
+
+      

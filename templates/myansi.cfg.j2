@@ -1,0 +1,12 @@
+[defaults]
+
+# some basic default values...
+
+inventory      = /etc/ansible/hosts
+[ssh_connection]
+ansible_ssh_user = ansibleuser
+ansible_ssh_key = /home/ansibleuser/.ssh/id_rsa
+host_key_checking = False
+ansible_ssh_common_args = '-o ProxyCommand="ssh -W %h:%p -q ansibleuser@{{ pub_instance_ips['webserver'] }}"'
+ansible_ssh_common_args='-o userknownhostsfile=/dev/null'
+control_path = ~/.ssh/ansible-%%r@%%h:%%p

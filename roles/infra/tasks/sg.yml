@@ -1,0 +1,17 @@
+---
+- name: Create security group
+  local_action: ec2_group
+  args:
+    name: "{{ item.value.name }}"
+    description: "Sec group for {{ item.value.description }}"
+    vpc_id: "{{ myvpc.vpc.id }}"
+    rules: "{{ item.value.rules }}"
+    tags:
+      Name: "{{ item.key }}"
+  with_dict: "{{ vpc_security_groups }}"
+  register: result_sec_group
+
+- name: "set fact: Security Group IDs"
+  set_fact:
+      sg_ids: "{{ sg_ids | default({}) | combine({ item.tags.Name: item.group_id }) }}"
+  loop: "{{ result_sec_group.results }}" 

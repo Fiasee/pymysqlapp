@@ -1,0 +1,6 @@
+- name: Upload public key to AWS
+  local_action: ec2_key
+  args:
+    name: "{{ key_name }}"
+    key_material: "{{ lookup('file', '{{ pub_key_path }}') }}"
+    region: "{{ region }}"   

@@ -1,0 +1,19 @@
+- name: create VPC subnets
+  local_action: ec2_vpc_subnet
+  args:
+    vpc_id: "{{ myvpc.vpc.id }}"
+    cidr: "{{ item.value.cidr }}"
+    az: "{{ item.value.az }}"
+    tags:
+      Name: "{{ item.key }}"
+  with_dict: "{{ vpc_subnets }}"
+  register: create_vpc_subnets
+
+- name: "set fact: VPC subnet IDs"
+  local_action: set_fact
+  args:
+      vpc_subnet_ids: "{{ vpc_subnet_ids | default({}) | combine({ item.subnet.tags.Name: item.subnet.id }) }}"
+  loop: "{{ create_vpc_subnets.results }}" 
+
+- debug:
+    var: vpc_subnet_ids  

@@ -1,0 +1,74 @@
+---
+- name: Set up infra
+  hosts: localhost
+  gather_facts: no
+  roles:
+    - infra
+    - ec2-asg
+
+  tasks:
+
+    - name: Refresh in-memory inventory
+      meta: refresh_inventory   
+
+    - name: collect instance facts
+      local_action: ec2_instance_info
+      args:  
+            region: "{{ region }}"
+            filters:
+              "tag:env": "prod"
+              instance-state-name: [ "running" ]
+      register: instance_info    
+
+    - name: "set fact: Instance ips"
+      set_fact:
+          pub_instance_ips: "{{ instance_ips | default({}) | combine({ item.tags.type: item.public_ip_address}) }}"
+      loop: "{{ instance_info.instances | json_query(\"[?public_ip_address]\") | list }}"
+
+    - debug:
+        var: pub_instance_ips
+
+    - name: "set fact: Private Instance ips"
+      set_fact:
+          pri_instance_ips: "{{ instance_ips | default({}) | combine({ item.tags.type: item.private_ip_address}) }}"
+      loop: "{{ instance_info.instances | selectattr('public_ip_address', 'undefined') | list }}" 
+    
+    - debug:
+        var: pri_instance_ips
+
+    - name: set ssh agent
+      become: yes
+      template:
+        src: ssh_config.conf.j2
+        dest: /etc/ssh/ssh_config
+      
+    - name: set ansible-cfg
+      become: yes
+      template:
+        src: myansi.cfg.j2
+        dest: /etc/ansible/ansible.cfg 
+
+    - name: set private-ip
+      set_fact:
+        private_ip: "{{ pri_instance_ips['appserver'] }}"
+        cacheable: yes
+
+- name: Set up App-Server
+  hosts: tag_type_appserver
+  become: yes
+  roles:    
+    - appserver
+
+- name: Set up Web-Server
+  hosts: tag_type_webserver
+  become: yes
+  vars:
+    privateip: "{{ hostvars['localhost']['private_ip'] }}"
+  roles:
+    - web-server
+
+
+
+
+
+

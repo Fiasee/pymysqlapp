@@ -1,0 +1,17 @@
+# ssh_config(5) man page.
+
+Host 10.2.*
+	User ansibleuser
+	ProxyCommand ssh -q -A ansibleuser@{{ pub_instance_ips['webserver'] }} nc -w 300 %h %p
+  StrictHostKeyChecking no
+
+
+Host {{ pub_instance_ips['webserver'] }}
+  Hostname {{ pub_instance_ips['webserver'] }}
+  StrictHostKeyChecking no
+  ForwardAgent yes
+  User ansibleuser
+  IdentityFile ~/.ssh/id_rsa
+  ControlMaster auto
+  ControlPath ~/.ssh/ansible-%%r@%%h:%%p
+  ControlPersist 5m    

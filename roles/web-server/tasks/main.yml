@@ -1,0 +1,62 @@
+---
+
+    - name: Install nginx load balancer
+      apt:  
+        name: nginx
+        state: present
+
+    - name: enable nginx
+      service:
+        name: nginx
+        state: started
+      ignore_errors: true
+
+    - name: Install Certbot
+      package: "name=certbot state=present"
+  
+    - name: Check if certificate already exists.
+      stat:
+        path: /etc/letsencrypt/live/{{ domain }}/cert.pem
+      register: letsencrypt_cert
+      when:
+        - certbot_create_if_missing
+        - certbot_create_method == 'standalone'
+
+    - debug:
+        var: letsencrypt_cert
+
+    - name: Stop services to allow certbot to generate a cert.
+      service:
+        name: "{{ item }}"
+        state: stopped
+      when: not letsencrypt_cert.stat.exists
+      with_items: "{{ certbot_create_standalone_stop_services }}"
+
+    - name: Generate new certificate if one doesn't exist.
+      command: "{{ certbot_create_command }}"
+      when: not letsencrypt_cert.stat.exists
+
+    - name: copy nginx configuration files
+      template:
+        src: templates/default.conf.j2
+        dest: /etc/nginx/sites-available/default
+        owner: ansibleuser
+        mode: u=rw,g=r,o=r
+
+    - name: create symlink
+      file:
+          src: /etc/nginx/sites-available/default
+          dest: /etc/nginx/sites-enabled/default 
+          owner: ansibleuser
+          mode: u=rw,g=r,o=r 
+      notify: restart nginx
+
+    - name: Start services after cert has been generated.
+      service:
+        name: "{{ item }}"
+        state: started
+      #when: not letsencrypt_cert.stat.exists
+      with_items: "{{ certbot_create_standalone_stop_services }}"
+
+
+

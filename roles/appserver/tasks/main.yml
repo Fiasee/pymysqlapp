@@ -1,0 +1,69 @@
+---
+# tasks file for appserver
+
+    - name: Install Python and its dependencies
+      apt: 
+        name: "{{ item }}" 
+        state: present
+      loop:
+          - python 
+          - python-setuptools
+          - python-dev
+          - build-essential
+          - python-pip
+          - python-mysqldb
+
+# From here DB
+
+    - name: Install and configure db
+      apt: 
+        name: "{{ item }}" 
+        state: present
+      loop:
+          - mysql-server
+          - mysql-client
+
+    - name: Start the database service
+      service: 
+        name: mysql 
+        state: started 
+        enabled: yes
+
+    - name: Create application DB
+      mysql_db: 
+        name: userdb
+        state: present
+
+    - name: Create DB user
+      mysql_user:
+        name: bob
+        password: password
+        priv: '*.*:ALL'
+        state: present
+        host: '%'     
+        
+    - name: Install Python Flask dependency
+      pip: 
+        name: "{{ item }}"
+      loop:
+          - flask
+          - flask_mysql
+          - flask_mysqldb
+          - mysql-connector
+
+    - name: Create table via script
+      script: table.py  
+
+    - name: copy source code - pyscript
+      copy: 
+        src: app.py 
+        dest: /opt/app.py
+    
+    - name: copy source code - html
+      copy: 
+        src: index.html 
+        dest: /opt/index.html   
+
+    - name: Start web server
+      shell: FLASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &   
+      #FLASK_APP=/opt/app.py flask run --host=0.0.0.0 &  

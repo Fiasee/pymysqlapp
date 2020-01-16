@@ -1,0 +1,8 @@
+---
+
+    - include: key.yml
+    - include: vpc.yml
+    - include: subnet.yml
+    - include: sg.yml
+    - include: igw.yml
+    - include: nat.yml
