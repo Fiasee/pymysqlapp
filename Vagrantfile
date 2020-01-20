@@ -22,13 +22,13 @@ cp /home/ansibleuser/.ssh/id_rsa.pub .
 sudo apt install python-pip --yes
 
 
-cat << EOF > pyscript.py
-#!/usr/bin/pip
-pip install boto boto3 botocore  --upgrade
-pip install awscli --upgrade --user
-EOF
-chmod 755 pyscript.py
-sudo -u ansibleuser bash -c "./pyscript.py"
+# cat << EOF > pyscript.py
+# #!/usr/bin/pip
+# pip install boto boto3 botocore  --upgrade
+# pip install awscli --upgrade --user
+# EOF
+# chmod 755 pyscript.py
+# sudo -u ansibleuser bash -c "./pyscript.py"
 
 rm /etc/ansible/hosts
 mkdir /etc/ansible/hosts
