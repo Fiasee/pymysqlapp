@@ -11,7 +11,7 @@ name: mypysqlapp
 region: ap-southeast-1
 
 public_eip: 18.140.139.205
-domain: cryptohuat.com
+domain: tezzty.com
 certbot_admin_email: https@1xy3z.com
 
 ### a map defining the subnets we will build in the VPC ###
